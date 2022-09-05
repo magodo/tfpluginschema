@@ -1,3 +1,5 @@
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/magodo/tfpluginschema)](https://pkg.go.dev/github.com/magodo/tfpluginschema)
+
 # tfpluginschema
 
 Terraform schema definition stands in the middle of the Terraform core schema and the Plugin SDK schema.

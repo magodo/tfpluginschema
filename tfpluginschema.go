@@ -6,6 +6,7 @@ import (
 	"github.com/magodo/tfpluginschema/schema"
 )
 
-func FromSDKv2ProviderSchemaMap(providerschemas map[string]*sdkschema.Schema) *schema.Block {
-	return sdkv2.FromProviderSchemaMap(providerschemas)
+// FromSDKv2SchemasMap converts the schema map from the schema defined in the plugin sdk v2 to the schema defined in tfpluginschema.
+func FromSDKv2SchemaMap(m map[string]*sdkschema.Schema) *schema.Block {
+	return sdkv2.FromSchemaMap(m)
 }

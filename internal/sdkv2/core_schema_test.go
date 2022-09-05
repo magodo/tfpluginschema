@@ -33,7 +33,7 @@ func testResource(block *schema.Block) *schema.Block {
 	return block
 }
 
-func TestSchemaMapCoreConfigSchema(t *testing.T) {
+func TestFromResource(t *testing.T) {
 	tests := map[string]struct {
 		Schema map[string]*sdkschema.Schema
 		Want   *schema.Block
@@ -695,7 +695,7 @@ func TestSchemaMapCoreConfigSchema(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := fromProviderResource(&sdkschema.Resource{Schema: test.Schema})
+			got := fromResource(&sdkschema.Resource{Schema: test.Schema})
 			if !cmp.Equal(got, test.Want, equateEmpty, typeComparer) {
 				t.Error(cmp.Diff(got, test.Want, equateEmpty, typeComparer))
 			}

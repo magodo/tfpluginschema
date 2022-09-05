@@ -10,8 +10,8 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-func FromProviderSchemaMap(providerschemas map[string]*sdkschema.Schema) *schema.Block {
-	if len(providerschemas) == 0 {
+func FromSchemaMap(m map[string]*sdkschema.Schema) *schema.Block {
+	if len(m) == 0 {
 		return &schema.Block{}
 	}
 
@@ -20,7 +20,7 @@ func FromProviderSchemaMap(providerschemas map[string]*sdkschema.Schema) *schema
 		NestedBlocks: map[string]*schema.NestedBlock{},
 	}
 
-	for name, ps := range providerschemas {
+	for name, ps := range m {
 		if ps.Elem == nil {
 			ret.Attributes[name] = fromProviderSchemaAttribute(ps)
 			continue
@@ -103,7 +103,7 @@ func fromProviderSchemaBlock(ps *sdkschema.Schema) *schema.NestedBlock {
 		RequiredWith:  ps.RequiredWith,
 	}
 
-	if nested := fromProviderResource(ps.Elem.(*sdkschema.Resource)); nested != nil {
+	if nested := fromResource(ps.Elem.(*sdkschema.Resource)); nested != nil {
 		ret.Block = nested
 	}
 
@@ -161,7 +161,7 @@ func fromProviderSchemaType(ps *sdkschema.Schema) cty.Type {
 		case sdkschema.ValueType:
 			elemType = fromProviderSchemaType(&sdkschema.Schema{Type: set})
 		case *sdkschema.Resource:
-			elemType = ImpliedType(fromProviderResource(set))
+			elemType = ImpliedType(fromResource(set))
 		default:
 			if set != nil {
 				panic(fmt.Errorf("invalid Schema.Elem %#v; need *schema.Schema or *schema.Resource", ps.Elem))
@@ -183,6 +183,6 @@ func fromProviderSchemaType(ps *sdkschema.Schema) cty.Type {
 	}
 }
 
-func fromProviderResource(pr *sdkschema.Resource) *schema.Block {
-	return FromProviderSchemaMap(pr.Schema)
+func fromResource(pr *sdkschema.Resource) *schema.Block {
+	return FromSchemaMap(pr.Schema)
 }
