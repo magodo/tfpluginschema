@@ -3,10 +3,14 @@ package schema
 import "github.com/zclconf/go-cty/cty"
 
 type ProviderSchema struct {
-	// The provder version. This is defined in the vcs.
-	Version string
+	Provider          *Schema              `json:"provider,omitempty"`
+	ResourceSchemas   map[string]*Resource `json:"resource_schemas,omitempty"`
+	DataSourceSchemas map[string]*Resource `json:"data_source_schemas,omitempty"`
+}
 
-	ResourceSchemas map[string]*Schema `json:"resource_schemas,omitempty"`
+type Resource struct {
+	SchemaVersion int    `json:"schema_version,omitempty"`
+	Block         *Block `json:"block,omitempty"`
 }
 
 type Schema struct {

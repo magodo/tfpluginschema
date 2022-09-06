@@ -103,8 +103,8 @@ func fromProviderSchemaBlock(ps *sdkschema.Schema) *schema.NestedBlock {
 		RequiredWith:  ps.RequiredWith,
 	}
 
-	if nested := fromResource(ps.Elem.(*sdkschema.Resource)); nested != nil {
-		ret.Block = nested
+	if nested := FromResource(ps.Elem.(*sdkschema.Resource)); nested != nil {
+		ret.Block = nested.Block
 	}
 
 	switch ps.Type {
@@ -161,7 +161,7 @@ func fromProviderSchemaType(ps *sdkschema.Schema) cty.Type {
 		case sdkschema.ValueType:
 			elemType = fromProviderSchemaType(&sdkschema.Schema{Type: set})
 		case *sdkschema.Resource:
-			elemType = ImpliedType(fromResource(set))
+			elemType = ImpliedType(FromResource(set).Block)
 		default:
 			if set != nil {
 				panic(fmt.Errorf("invalid Schema.Elem %#v; need *schema.Schema or *schema.Resource", ps.Elem))
@@ -183,6 +183,28 @@ func fromProviderSchemaType(ps *sdkschema.Schema) cty.Type {
 	}
 }
 
-func fromResource(pr *sdkschema.Resource) *schema.Block {
-	return FromSchemaMap(pr.Schema)
+func FromResource(res *sdkschema.Resource) *schema.Resource {
+	ret := &schema.Resource{
+		SchemaVersion: res.SchemaVersion,
+		Block:         FromSchemaMap(res.Schema),
+	}
+	return ret
+}
+
+func FromProvider(p *sdkschema.Provider) *schema.ProviderSchema {
+	ret := &schema.ProviderSchema{
+		Provider: &schema.Schema{
+			Block: FromSchemaMap(p.Schema),
+		},
+		ResourceSchemas:   map[string]*schema.Resource{},
+		DataSourceSchemas: map[string]*schema.Resource{},
+	}
+
+	for name, res := range p.ResourcesMap {
+		ret.ResourceSchemas[name] = FromResource(res)
+	}
+	for name, res := range p.DataSourcesMap {
+		ret.DataSourceSchemas[name] = FromResource(res)
+	}
+	return ret
 }

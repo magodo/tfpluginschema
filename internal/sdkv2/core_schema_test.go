@@ -19,7 +19,7 @@ var (
 	equateEmpty   = cmpopts.EquateEmpty()
 )
 
-func testResource(block *schema.Block) *schema.Block {
+func testSchema(block *schema.Block) *schema.Block {
 	if block.Attributes == nil {
 		block.Attributes = make(map[string]*schema.Attribute)
 	}
@@ -33,14 +33,34 @@ func testResource(block *schema.Block) *schema.Block {
 	return block
 }
 
-func TestFromResource(t *testing.T) {
+func testResource(res *schema.Resource) *schema.Resource {
+	if res.Block == nil {
+		res.Block = testSchema(&schema.Block{})
+	}
+	return res
+}
+
+func testProvider(p *schema.ProviderSchema) *schema.ProviderSchema {
+	if p.Provider == nil {
+		p.Provider = &schema.Schema{Block: testSchema(&schema.Block{})}
+	}
+	if p.ResourceSchemas == nil {
+		p.ResourceSchemas = make(map[string]*schema.Resource)
+	}
+	if p.DataSourceSchemas == nil {
+		p.DataSourceSchemas = make(map[string]*schema.Resource)
+	}
+	return p
+}
+
+func TestFromSchemaMap(t *testing.T) {
 	tests := map[string]struct {
 		Schema map[string]*sdkschema.Schema
 		Want   *schema.Block
 	}{
 		"empty": {
 			map[string]*sdkschema.Schema{},
-			testResource(&schema.Block{}),
+			testSchema(&schema.Block{}),
 		},
 		"primitives": {
 			map[string]*sdkschema.Schema{
@@ -62,7 +82,7 @@ func TestFromResource(t *testing.T) {
 					Computed: true,
 				},
 			},
-			testResource(&schema.Block{
+			testSchema(&schema.Block{
 				Attributes: map[string]*schema.Attribute{
 					"int": {
 						Type:     cty.Number,
@@ -113,7 +133,7 @@ func TestFromResource(t *testing.T) {
 					Optional: true,
 				},
 			},
-			testResource(&schema.Block{
+			testSchema(&schema.Block{
 				Attributes: map[string]*schema.Attribute{
 					"list": {
 						Type:     cty.List(cty.Number),
@@ -153,7 +173,7 @@ func TestFromResource(t *testing.T) {
 					Elem:     sdkschema.TypeBool,
 				},
 			},
-			testResource(&schema.Block{
+			testSchema(&schema.Block{
 				Attributes: map[string]*schema.Attribute{
 					"list": {
 						Type:     cty.List(cty.Number),
@@ -197,7 +217,7 @@ func TestFromResource(t *testing.T) {
 					},
 				},
 			},
-			testResource(&schema.Block{
+			testSchema(&schema.Block{
 				Attributes: map[string]*schema.Attribute{
 					"map": {
 						Type:     cty.Map(cty.String),
@@ -242,7 +262,7 @@ func TestFromResource(t *testing.T) {
 					MaxItems: 1,
 				},
 			},
-			testResource(&schema.Block{
+			testSchema(&schema.Block{
 				Attributes: map[string]*schema.Attribute{},
 				NestedBlocks: map[string]*schema.NestedBlock{
 					"list": {
@@ -283,7 +303,7 @@ func TestFromResource(t *testing.T) {
 					MaxItems: 1,
 				},
 			},
-			testResource(&schema.Block{
+			testSchema(&schema.Block{
 				Attributes: map[string]*schema.Attribute{
 					"list": {
 						Type:     cty.List(cty.EmptyObject),
@@ -324,7 +344,7 @@ func TestFromResource(t *testing.T) {
 					},
 				},
 			},
-			testResource(&schema.Block{
+			testSchema(&schema.Block{
 				Attributes: map[string]*schema.Attribute{},
 				NestedBlocks: map[string]*schema.NestedBlock{
 					"foo": {
@@ -358,7 +378,7 @@ func TestFromResource(t *testing.T) {
 					Sensitive: true,
 				},
 			},
-			testResource(&schema.Block{
+			testSchema(&schema.Block{
 				Attributes: map[string]*schema.Attribute{
 					"string": {
 						Type:      cty.String,
@@ -379,7 +399,7 @@ func TestFromResource(t *testing.T) {
 					},
 				},
 			},
-			testResource(&schema.Block{
+			testSchema(&schema.Block{
 				Attributes: map[string]*schema.Attribute{
 					"string": {
 						Type:     cty.String,
@@ -399,7 +419,7 @@ func TestFromResource(t *testing.T) {
 					},
 				},
 			},
-			testResource(&schema.Block{
+			testSchema(&schema.Block{
 				Attributes: map[string]*schema.Attribute{
 					"string": {
 						Type:     cty.String,
@@ -419,7 +439,7 @@ func TestFromResource(t *testing.T) {
 					},
 				},
 			},
-			testResource(&schema.Block{
+			testSchema(&schema.Block{
 				Attributes: map[string]*schema.Attribute{
 					"string": {
 						Type:     cty.String,
@@ -455,7 +475,7 @@ func TestFromResource(t *testing.T) {
 					Default:  "foo",
 				},
 			},
-			testResource(&schema.Block{
+			testSchema(&schema.Block{
 				Attributes: map[string]*schema.Attribute{
 					"int": {
 						Type:     cty.Number,
@@ -524,7 +544,7 @@ func TestFromResource(t *testing.T) {
 					AtLeastOneOf: []string{"d1", "d2"},
 				},
 			},
-			testResource(&schema.Block{
+			testSchema(&schema.Block{
 				Attributes: map[string]*schema.Attribute{
 					"a1": {
 						Type:          cty.Number,
@@ -637,7 +657,7 @@ func TestFromResource(t *testing.T) {
 					AtLeastOneOf: []string{"d1", "d2"},
 				},
 			},
-			testResource(&schema.Block{
+			testSchema(&schema.Block{
 				Attributes: map[string]*schema.Attribute{},
 				NestedBlocks: map[string]*schema.NestedBlock{
 					"a1": {
@@ -695,7 +715,171 @@ func TestFromResource(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := fromResource(&sdkschema.Resource{Schema: test.Schema})
+			got := FromSchemaMap(test.Schema)
+			if !cmp.Equal(got, test.Want, equateEmpty, typeComparer) {
+				t.Error(cmp.Diff(got, test.Want, equateEmpty, typeComparer))
+			}
+		})
+	}
+}
+
+func TestFromResource(t *testing.T) {
+	tests := map[string]struct {
+		Resource *sdkschema.Resource
+		Want     *schema.Resource
+	}{
+		"empty": {
+			&sdkschema.Resource{},
+			testResource(&schema.Resource{}),
+		},
+		"primitives": {
+			&sdkschema.Resource{
+				SchemaVersion: 1,
+				Schema: map[string]*sdkschema.Schema{
+					"int": {
+						Type:     sdkschema.TypeInt,
+						Required: true,
+					},
+					"float": {
+						Type:     sdkschema.TypeFloat,
+						Optional: true,
+					},
+					"bool": {
+						Type:     sdkschema.TypeBool,
+						Computed: true,
+					},
+					"string": {
+						Type:     sdkschema.TypeString,
+						Optional: true,
+						Computed: true,
+					},
+				},
+			},
+			testResource(&schema.Resource{
+				SchemaVersion: 1,
+				Block: &schema.Block{
+					Attributes: map[string]*schema.Attribute{
+						"int": {
+							Type:     cty.Number,
+							Required: true,
+						},
+						"float": {
+							Type:     cty.Number,
+							Optional: true,
+						},
+						"bool": {
+							Type:     cty.Bool,
+							Computed: true,
+						},
+						"string": {
+							Type:     cty.String,
+							Optional: true,
+							Computed: true,
+						},
+					},
+					NestedBlocks: map[string]*schema.NestedBlock{},
+				},
+			}),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := FromResource(test.Resource)
+			if !cmp.Equal(got, test.Want, equateEmpty, typeComparer) {
+				t.Error(cmp.Diff(got, test.Want, equateEmpty, typeComparer))
+			}
+		})
+	}
+}
+
+func TestFromProvider(t *testing.T) {
+	tests := map[string]struct {
+		Provider *sdkschema.Provider
+		Want     *schema.ProviderSchema
+	}{
+		"empty": {
+			&sdkschema.Provider{},
+			testProvider(&schema.ProviderSchema{}),
+		},
+		"full": {
+			&sdkschema.Provider{
+				Schema: map[string]*sdkschema.Schema{
+					"a": {
+						Type:     sdkschema.TypeInt,
+						Required: true,
+					},
+				},
+				ResourcesMap: map[string]*sdkschema.Resource{
+					"foo": {
+						SchemaVersion: 1,
+						Schema: map[string]*sdkschema.Schema{
+							"b": {
+								Type:     sdkschema.TypeInt,
+								Required: true,
+							},
+						},
+					},
+				},
+				DataSourcesMap: map[string]*sdkschema.Resource{
+					"bar": {
+						SchemaVersion: 1,
+						Schema: map[string]*sdkschema.Schema{
+							"c": {
+								Type:     sdkschema.TypeInt,
+								Required: true,
+							},
+						},
+					},
+				},
+			},
+			testProvider(&schema.ProviderSchema{
+				Provider: &schema.Schema{
+					Block: &schema.Block{
+						Attributes: map[string]*schema.Attribute{
+							"a": {
+								Type:     cty.Number,
+								Required: true,
+							},
+						},
+						NestedBlocks: map[string]*schema.NestedBlock{},
+					},
+				},
+				ResourceSchemas: map[string]*schema.Resource{
+					"foo": testResource(&schema.Resource{
+						SchemaVersion: 1,
+						Block: &schema.Block{
+							Attributes: map[string]*schema.Attribute{
+								"b": {
+									Type:     cty.Number,
+									Required: true,
+								},
+							},
+							NestedBlocks: map[string]*schema.NestedBlock{},
+						},
+					}),
+				},
+				DataSourceSchemas: map[string]*schema.Resource{
+					"bar": testResource(&schema.Resource{
+						SchemaVersion: 1,
+						Block: &schema.Block{
+							Attributes: map[string]*schema.Attribute{
+								"c": {
+									Type:     cty.Number,
+									Required: true,
+								},
+							},
+							NestedBlocks: map[string]*schema.NestedBlock{},
+						},
+					}),
+				},
+			}),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := FromProvider(test.Provider)
 			if !cmp.Equal(got, test.Want, equateEmpty, typeComparer) {
 				t.Error(cmp.Diff(got, test.Want, equateEmpty, typeComparer))
 			}
