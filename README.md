@@ -2,9 +2,7 @@
 
 # tfpluginschema
 
-Terraform schema definition stands in the middle of the Terraform core schema and the Plugin SDK schema.
-
-Currently, only [terraform-plugin-sdk](https://github.com/hashicorp/terraform-plugin-sdk) schema is supported. The support for [terraform-plugin-framework](https://github.com/hashicorp/terraform-plugin-framework) schema is comming soon.
+Terraform schema definition stands in the middle of the Terraform core schema and the Plugin SDK/FW schema.
 
 ## Why
 
@@ -12,7 +10,7 @@ The motivation for this is to add more information that is lost during the [conv
 
 Specifically, we are:
 
-1. Adding `Required`, `Optional`, `Computed` for the `BlockType`
-2. Adding `Default` for the `Attribute`
-3. Adding `ExactlyOneOf`, `AtLeastOneOf`, `ConflictsWith` and `RequiredWith` for both `BlockType` and the `Attribute`
-4. Removing any other attributes
+1. Adding `Default` for the `Attribute`
+1. Adding `Required`, `Optional`, `Computed` for the `BlockType` (SDK v2 only)
+1. Adding `ExactlyOneOf`, `AtLeastOneOf`, `ConflictsWith` and `RequiredWith` for both `BlockType` and the `Attribute` (SDK v2 only)
+1. Removing any other attributes
