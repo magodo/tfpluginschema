@@ -13,6 +13,9 @@ import (
 func FromProvider(p provider.Provider) (*schema.ProviderSchema, error) {
 	ctx := context.Background()
 
+	var providerMetadataResp provider.MetadataResponse
+	p.Metadata(ctx, provider.MetadataRequest{}, &providerMetadataResp)
+
 	var providerSchemaResp provider.SchemaResponse
 	p.Schema(ctx, provider.SchemaRequest{}, &providerSchemaResp)
 	if providerSchemaResp.Diagnostics.HasError() {
@@ -42,7 +45,7 @@ func FromProvider(p provider.Provider) (*schema.ProviderSchema, error) {
 
 	for _, res := range resources {
 		var metadataResp resource.MetadataResponse
-		res.Metadata(ctx, resource.MetadataRequest{}, &metadataResp)
+		res.Metadata(ctx, resource.MetadataRequest{ProviderTypeName: providerMetadataResp.TypeName}, &metadataResp)
 
 		var schemaResp resource.SchemaResponse
 		res.Schema(ctx, resource.SchemaRequest{}, &schemaResp)
@@ -57,7 +60,7 @@ func FromProvider(p provider.Provider) (*schema.ProviderSchema, error) {
 	}
 	for _, ds := range datasources {
 		var metadataResp datasource.MetadataResponse
-		ds.Metadata(ctx, datasource.MetadataRequest{}, &metadataResp)
+		ds.Metadata(ctx, datasource.MetadataRequest{ProviderTypeName: providerMetadataResp.TypeName}, &metadataResp)
 
 		var schemaResp datasource.SchemaResponse
 		ds.Schema(ctx, datasource.SchemaRequest{}, &schemaResp)

@@ -161,8 +161,8 @@ func (t *TestResource) Delete(context.Context, resource.DeleteRequest, *resource
 }
 
 // Metadata implements resource.Resource.
-func (t *TestResource) Metadata(ctx context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = "foo_resource"
+func (t *TestResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_resource"
 }
 
 // Read implements resource.Resource.
@@ -271,8 +271,8 @@ var _ datasource.DataSource = &TestDatasource{}
 type TestDatasource struct{}
 
 // Metadata implements datasource.DataSource.
-func (t *TestDatasource) Metadata(_ context.Context, _ datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = "foo_resource"
+func (t *TestDatasource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_resource"
 }
 
 // Read implements datasource.DataSource.
