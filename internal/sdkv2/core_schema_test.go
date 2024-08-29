@@ -19,13 +19,13 @@ var (
 	equateEmpty   = cmpopts.EquateEmpty()
 )
 
-func testSchema(block *schema.Block) *schema.Block {
+func testSchema(block *schema.SchemaBlock) *schema.SchemaBlock {
 	if block.Attributes == nil {
-		block.Attributes = make(map[string]*schema.Attribute)
+		block.Attributes = []*schema.SchemaAttribute{}
 	}
 
-	if block.NestedBlocks == nil {
-		block.NestedBlocks = make(map[string]*schema.NestedBlock)
+	if block.BlockTypes == nil {
+		block.BlockTypes = []*schema.SchemaNestedBlock{}
 	}
 
 	// Intentionally remove the logic that adding "id" implicitly.
@@ -33,22 +33,22 @@ func testSchema(block *schema.Block) *schema.Block {
 	return block
 }
 
-func testResource(res *schema.Resource) *schema.Resource {
+func testResource(res *schema.Schema) *schema.Schema {
 	if res.Block == nil {
-		res.Block = testSchema(&schema.Block{})
+		res.Block = testSchema(&schema.SchemaBlock{})
 	}
 	return res
 }
 
 func testProvider(p *schema.ProviderSchema) *schema.ProviderSchema {
 	if p.Provider == nil {
-		p.Provider = &schema.Schema{Block: testSchema(&schema.Block{})}
+		p.Provider = &schema.Schema{Block: testSchema(&schema.SchemaBlock{})}
 	}
 	if p.ResourceSchemas == nil {
-		p.ResourceSchemas = make(map[string]*schema.Resource)
+		p.ResourceSchemas = make(map[string]*schema.Schema)
 	}
 	if p.DataSourceSchemas == nil {
-		p.DataSourceSchemas = make(map[string]*schema.Resource)
+		p.DataSourceSchemas = make(map[string]*schema.Schema)
 	}
 	return p
 }
@@ -56,11 +56,11 @@ func testProvider(p *schema.ProviderSchema) *schema.ProviderSchema {
 func TestFromSchemaMap(t *testing.T) {
 	tests := map[string]struct {
 		Schema map[string]*sdkschema.Schema
-		Want   *schema.Block
+		Want   *schema.SchemaBlock
 	}{
 		"empty": {
 			map[string]*sdkschema.Schema{},
-			testSchema(&schema.Block{}),
+			testSchema(&schema.SchemaBlock{}),
 		},
 		"primitives": {
 			map[string]*sdkschema.Schema{
@@ -82,27 +82,35 @@ func TestFromSchemaMap(t *testing.T) {
 					Computed: true,
 				},
 			},
-			testSchema(&schema.Block{
-				Attributes: map[string]*schema.Attribute{
-					"int": {
-						Type:     cty.Number,
+			testSchema(&schema.SchemaBlock{
+				Attributes: []*schema.SchemaAttribute{
+					{
+						Name:     "bool",
+						Type:     ToPtr(cty.Bool),
+						Computed: true,
+						ForceNew: ToPtr(false),
+					},
+					{
+						Name:     "float",
+						Type:     ToPtr(cty.Number),
+						Optional: true,
+						ForceNew: ToPtr(false),
+					},
+					{
+						Name:     "int",
+						Type:     ToPtr(cty.Number),
 						Required: true,
+						ForceNew: ToPtr(false),
 					},
-					"float": {
-						Type:     cty.Number,
-						Optional: true,
-					},
-					"bool": {
-						Type:     cty.Bool,
-						Computed: true,
-					},
-					"string": {
-						Type:     cty.String,
+					{
+						Name:     "string",
+						Type:     ToPtr(cty.String),
 						Optional: true,
 						Computed: true,
+						ForceNew: ToPtr(false),
 					},
 				},
-				NestedBlocks: map[string]*schema.NestedBlock{},
+				BlockTypes: []*schema.SchemaNestedBlock{},
 			}),
 		},
 		"simple collections": {
@@ -133,26 +141,34 @@ func TestFromSchemaMap(t *testing.T) {
 					Optional: true,
 				},
 			},
-			testSchema(&schema.Block{
-				Attributes: map[string]*schema.Attribute{
-					"list": {
-						Type:     cty.List(cty.Number),
+			testSchema(&schema.SchemaBlock{
+				Attributes: []*schema.SchemaAttribute{
+					{
+						Name:     "list",
+						Type:     ToPtr(cty.List(cty.Number)),
 						Required: true,
+						ForceNew: ToPtr(false),
 					},
-					"set": {
-						Type:     cty.Set(cty.String),
+					{
+						Name:     "map",
+						Type:     ToPtr(cty.Map(cty.Bool)),
 						Optional: true,
+						ForceNew: ToPtr(false),
 					},
-					"map": {
-						Type:     cty.Map(cty.Bool),
+					{
+						Name:     "map_default_type",
+						Type:     ToPtr(cty.Map(cty.String)),
 						Optional: true,
+						ForceNew: ToPtr(false),
 					},
-					"map_default_type": {
-						Type:     cty.Map(cty.String),
+					{
+						Name:     "set",
+						Type:     ToPtr(cty.Set(cty.String)),
 						Optional: true,
+						ForceNew: ToPtr(false),
 					},
 				},
-				NestedBlocks: map[string]*schema.NestedBlock{},
+				BlockTypes: []*schema.SchemaNestedBlock{},
 			}),
 		},
 		"incorrectly-specified collections": {
@@ -173,22 +189,28 @@ func TestFromSchemaMap(t *testing.T) {
 					Elem:     sdkschema.TypeBool,
 				},
 			},
-			testSchema(&schema.Block{
-				Attributes: map[string]*schema.Attribute{
-					"list": {
-						Type:     cty.List(cty.Number),
+			testSchema(&schema.SchemaBlock{
+				Attributes: []*schema.SchemaAttribute{
+					{
+						Name:     "list",
+						Type:     ToPtr(cty.List(cty.Number)),
 						Required: true,
+						ForceNew: ToPtr(false),
 					},
-					"set": {
-						Type:     cty.Set(cty.String),
+					{
+						Name:     "map",
+						Type:     ToPtr(cty.Map(cty.Bool)),
 						Optional: true,
+						ForceNew: ToPtr(false),
 					},
-					"map": {
-						Type:     cty.Map(cty.Bool),
+					{
+						Name:     "set",
+						Type:     ToPtr(cty.Set(cty.String)),
 						Optional: true,
+						ForceNew: ToPtr(false),
 					},
 				},
-				NestedBlocks: map[string]*schema.NestedBlock{},
+				BlockTypes: []*schema.SchemaNestedBlock{},
 			}),
 		},
 		"sub-resource collections": {
@@ -217,26 +239,36 @@ func TestFromSchemaMap(t *testing.T) {
 					},
 				},
 			},
-			testSchema(&schema.Block{
-				Attributes: map[string]*schema.Attribute{
-					"map": {
-						Type:     cty.Map(cty.String),
+			testSchema(&schema.SchemaBlock{
+				Attributes: []*schema.SchemaAttribute{
+					{
+						Name:     "map",
+						Type:     ToPtr(cty.Map(cty.String)),
 						Optional: true,
+						ForceNew: ToPtr(false),
 					},
 				},
-				NestedBlocks: map[string]*schema.NestedBlock{
-					"list": {
-						Required:    true, // NEW
-						NestingMode: schema.NestingList,
-						Block:       &schema.Block{},
-						MinItems:    1,
-						MaxItems:    2,
+				BlockTypes: []*schema.SchemaNestedBlock{
+					{
+						TypeName: "list",
+						Required: ToPtr(true),  // NEW
+						ForceNew: ToPtr(false), // NEW
+						Optional: ToPtr(false), // NEW
+						Computed: ToPtr(false), // New
+						Nesting:  schema.SchemaNestedBlockNestingModeList,
+						Block:    &schema.SchemaBlock{},
+						MinItems: 1,
+						MaxItems: 2,
 					},
-					"set": {
-						Required:    true, // NEW
-						NestingMode: schema.NestingSet,
-						Block:       &schema.Block{},
-						MinItems:    1,
+					{
+						TypeName: "set",
+						Required: ToPtr(true),  // NEW
+						ForceNew: ToPtr(false), // NEW
+						Optional: ToPtr(false), // NEW
+						Computed: ToPtr(false), // New
+						Nesting:  schema.SchemaNestedBlockNestingModeSet,
+						Block:    &schema.SchemaBlock{},
+						MinItems: 1,
 					},
 				},
 			}),
@@ -262,22 +294,30 @@ func TestFromSchemaMap(t *testing.T) {
 					MaxItems: 1,
 				},
 			},
-			testSchema(&schema.Block{
-				Attributes: map[string]*schema.Attribute{},
-				NestedBlocks: map[string]*schema.NestedBlock{
-					"list": {
-						Optional:    true, // NEW
-						NestingMode: schema.NestingList,
-						Block:       &schema.Block{},
-						MinItems:    0,
-						MaxItems:    1,
+			testSchema(&schema.SchemaBlock{
+				Attributes: []*schema.SchemaAttribute{},
+				BlockTypes: []*schema.SchemaNestedBlock{
+					{
+						TypeName: "list",
+						Optional: ToPtr(true),  // NEW
+						Required: ToPtr(false), // NEW
+						ForceNew: ToPtr(false), // NEW
+						Computed: ToPtr(false), // New
+						Nesting:  schema.SchemaNestedBlockNestingModeList,
+						Block:    &schema.SchemaBlock{},
+						MinItems: 0,
+						MaxItems: 1,
 					},
-					"set": {
-						Optional:    true, // NEW
-						NestingMode: schema.NestingSet,
-						Block:       &schema.Block{},
-						MinItems:    0,
-						MaxItems:    1,
+					{
+						TypeName: "set",
+						Optional: ToPtr(true),  // NEW
+						Required: ToPtr(false), // NEW
+						ForceNew: ToPtr(false), // NEW
+						Computed: ToPtr(false), // New
+						Nesting:  schema.SchemaNestedBlockNestingModeSet,
+						Block:    &schema.SchemaBlock{},
+						MinItems: 0,
+						MaxItems: 1,
 					},
 				},
 			}),
@@ -303,15 +343,19 @@ func TestFromSchemaMap(t *testing.T) {
 					MaxItems: 1,
 				},
 			},
-			testSchema(&schema.Block{
-				Attributes: map[string]*schema.Attribute{
-					"list": {
-						Type:     cty.List(cty.EmptyObject),
+			testSchema(&schema.SchemaBlock{
+				Attributes: []*schema.SchemaAttribute{
+					{
+						Name:     "list",
+						Type:     ToPtr(cty.List(cty.EmptyObject)),
 						Computed: true,
+						ForceNew: ToPtr(false),
 					},
-					"set": {
-						Type:     cty.Set(cty.EmptyObject),
+					{
+						Name:     "set",
+						Type:     ToPtr(cty.Set(cty.EmptyObject)),
 						Computed: true,
+						ForceNew: ToPtr(false),
 					},
 				},
 			}),
@@ -344,24 +388,34 @@ func TestFromSchemaMap(t *testing.T) {
 					},
 				},
 			},
-			testSchema(&schema.Block{
-				Attributes: map[string]*schema.Attribute{},
-				NestedBlocks: map[string]*schema.NestedBlock{
-					"foo": {
-						Required:    true, // NEW
-						NestingMode: schema.NestingList,
-						Block: &schema.Block{
-							Attributes: map[string]*schema.Attribute{
-								"bar": {
-									Type:     cty.List(cty.List(cty.String)),
+			testSchema(&schema.SchemaBlock{
+				Attributes: []*schema.SchemaAttribute{},
+				BlockTypes: []*schema.SchemaNestedBlock{
+					{
+						TypeName: "foo",
+						Required: ToPtr(true),  // NEW
+						ForceNew: ToPtr(false), // NEW
+						Optional: ToPtr(false), // NEW
+						Computed: ToPtr(false), // NEW
+						Nesting:  schema.SchemaNestedBlockNestingModeList,
+						Block: &schema.SchemaBlock{
+							Attributes: []*schema.SchemaAttribute{
+								{
+									Name:     "bar",
+									Type:     ToPtr(cty.List(cty.List(cty.String))),
 									Required: true,
+									ForceNew: ToPtr(false),
 								},
 							},
-							NestedBlocks: map[string]*schema.NestedBlock{
-								"baz": {
-									NestingMode: schema.NestingSet,
-									Block:       &schema.Block{},
-									Optional:    true, // NEW
+							BlockTypes: []*schema.SchemaNestedBlock{
+								{
+									TypeName: "baz",
+									Nesting:  schema.SchemaNestedBlockNestingModeSet,
+									Block:    &schema.SchemaBlock{},
+									Optional: ToPtr(true),  // NEW
+									Required: ToPtr(false), // NEW
+									ForceNew: ToPtr(false), // NEW
+									Computed: ToPtr(false), // NEW
 								},
 							},
 						},
@@ -378,15 +432,17 @@ func TestFromSchemaMap(t *testing.T) {
 					Sensitive: true,
 				},
 			},
-			testSchema(&schema.Block{
-				Attributes: map[string]*schema.Attribute{
-					"string": {
-						Type:      cty.String,
+			testSchema(&schema.SchemaBlock{
+				Attributes: []*schema.SchemaAttribute{
+					{
+						Name:      "string",
+						Type:      ToPtr(cty.String),
 						Optional:  true,
 						Sensitive: true,
+						ForceNew:  ToPtr(false),
 					},
 				},
-				NestedBlocks: map[string]*schema.NestedBlock{},
+				BlockTypes: []*schema.SchemaNestedBlock{},
 			}),
 		},
 		"conditionally required on": {
@@ -399,14 +455,16 @@ func TestFromSchemaMap(t *testing.T) {
 					},
 				},
 			},
-			testSchema(&schema.Block{
-				Attributes: map[string]*schema.Attribute{
-					"string": {
-						Type:     cty.String,
+			testSchema(&schema.SchemaBlock{
+				Attributes: []*schema.SchemaAttribute{
+					{
+						Name:     "string",
+						Type:     ToPtr(cty.String),
 						Required: true,
+						ForceNew: ToPtr(false),
 					},
 				},
-				NestedBlocks: map[string]*schema.NestedBlock{},
+				BlockTypes: []*schema.SchemaNestedBlock{},
 			}),
 		},
 		"conditionally required off": {
@@ -419,14 +477,16 @@ func TestFromSchemaMap(t *testing.T) {
 					},
 				},
 			},
-			testSchema(&schema.Block{
-				Attributes: map[string]*schema.Attribute{
-					"string": {
-						Type:     cty.String,
+			testSchema(&schema.SchemaBlock{
+				Attributes: []*schema.SchemaAttribute{
+					{
+						Name:     "string",
+						Type:     ToPtr(cty.String),
 						Optional: true,
+						ForceNew: ToPtr(false),
 					},
 				},
-				NestedBlocks: map[string]*schema.NestedBlock{},
+				BlockTypes: []*schema.SchemaNestedBlock{},
 			}),
 		},
 		"conditionally required error": {
@@ -439,14 +499,16 @@ func TestFromSchemaMap(t *testing.T) {
 					},
 				},
 			},
-			testSchema(&schema.Block{
-				Attributes: map[string]*schema.Attribute{
-					"string": {
-						Type:     cty.String,
+			testSchema(&schema.SchemaBlock{
+				Attributes: []*schema.SchemaAttribute{
+					{
+						Name:     "string",
+						Type:     ToPtr(cty.String),
 						Optional: true,
+						ForceNew: ToPtr(false),
 					},
 				},
-				NestedBlocks: map[string]*schema.NestedBlock{},
+				BlockTypes: []*schema.SchemaNestedBlock{},
 			}),
 		},
 
@@ -475,30 +537,38 @@ func TestFromSchemaMap(t *testing.T) {
 					Default:  "foo",
 				},
 			},
-			testSchema(&schema.Block{
-				Attributes: map[string]*schema.Attribute{
-					"int": {
-						Type:     cty.Number,
-						Optional: true,
-						Default:  1,
-					},
-					"float": {
-						Type:     cty.Number,
-						Optional: true,
-						Default:  1.0,
-					},
-					"bool": {
-						Type:     cty.Bool,
+			testSchema(&schema.SchemaBlock{
+				Attributes: []*schema.SchemaAttribute{
+					{
+						Name:     "bool",
+						Type:     ToPtr(cty.Bool),
 						Optional: true,
 						Default:  true,
+						ForceNew: ToPtr(false),
 					},
-					"string": {
-						Type:     cty.String,
+					{
+						Name:     "float",
+						Type:     ToPtr(cty.Number),
+						Optional: true,
+						Default:  1.0,
+						ForceNew: ToPtr(false),
+					},
+					{
+						Name:     "int",
+						Type:     ToPtr(cty.Number),
+						Optional: true,
+						Default:  1,
+						ForceNew: ToPtr(false),
+					},
+					{
+						Name:     "string",
+						Type:     ToPtr(cty.String),
 						Optional: true,
 						Default:  "foo",
+						ForceNew: ToPtr(false),
 					},
 				},
-				NestedBlocks: map[string]*schema.NestedBlock{},
+				BlockTypes: []*schema.SchemaNestedBlock{},
 			}),
 		},
 		"cross attribute constraints": {
@@ -544,50 +614,66 @@ func TestFromSchemaMap(t *testing.T) {
 					AtLeastOneOf: []string{"d1", "d2"},
 				},
 			},
-			testSchema(&schema.Block{
-				Attributes: map[string]*schema.Attribute{
-					"a1": {
-						Type:          cty.Number,
+			testSchema(&schema.SchemaBlock{
+				Attributes: []*schema.SchemaAttribute{
+					{
+						Name:          "a1",
+						Type:          ToPtr(cty.Number),
 						Optional:      true,
 						ConflictsWith: []string{"a1", "a2"},
+						ForceNew:      ToPtr(false),
 					},
-					"a2": {
-						Type:          cty.Number,
+					{
+						Name:          "a2",
+						Type:          ToPtr(cty.Number),
 						Optional:      true,
 						ConflictsWith: []string{"a1", "a2"},
+						ForceNew:      ToPtr(false),
 					},
-					"b1": {
-						Type:         cty.Number,
+					{
+						Name:         "b1",
+						Type:         ToPtr(cty.Number),
 						Optional:     true,
 						RequiredWith: []string{"b1", "b2"},
+						ForceNew:     ToPtr(false),
 					},
-					"b2": {
-						Type:         cty.Number,
+					{
+						Name:         "b2",
+						Type:         ToPtr(cty.Number),
 						Optional:     true,
 						RequiredWith: []string{"b1", "b2"},
+						ForceNew:     ToPtr(false),
 					},
-					"c1": {
-						Type:         cty.Number,
+					{
+						Name:         "c1",
+						Type:         ToPtr(cty.Number),
 						Optional:     true,
 						ExactlyOneOf: []string{"c1", "c2"},
+						ForceNew:     ToPtr(false),
 					},
-					"c2": {
-						Type:         cty.Number,
+					{
+						Name:         "c2",
+						Type:         ToPtr(cty.Number),
 						Optional:     true,
 						ExactlyOneOf: []string{"c1", "c2"},
+						ForceNew:     ToPtr(false),
 					},
-					"d1": {
-						Type:         cty.Number,
+					{
+						Name:         "d1",
+						Type:         ToPtr(cty.Number),
 						Optional:     true,
 						AtLeastOneOf: []string{"d1", "d2"},
+						ForceNew:     ToPtr(false),
 					},
-					"d2": {
-						Type:         cty.Number,
+					{
+						Name:         "d2",
+						Type:         ToPtr(cty.Number),
 						Optional:     true,
 						AtLeastOneOf: []string{"d1", "d2"},
+						ForceNew:     ToPtr(false),
 					},
 				},
-				NestedBlocks: map[string]*schema.NestedBlock{},
+				BlockTypes: []*schema.SchemaNestedBlock{},
 			}),
 		},
 		"cross block constraints": {
@@ -657,56 +743,88 @@ func TestFromSchemaMap(t *testing.T) {
 					AtLeastOneOf: []string{"d1", "d2"},
 				},
 			},
-			testSchema(&schema.Block{
-				Attributes: map[string]*schema.Attribute{},
-				NestedBlocks: map[string]*schema.NestedBlock{
-					"a1": {
-						NestingMode:   schema.NestingList,
-						Block:         &schema.Block{},
-						Optional:      true,
+			testSchema(&schema.SchemaBlock{
+				Attributes: []*schema.SchemaAttribute{},
+				BlockTypes: []*schema.SchemaNestedBlock{
+					{
+						TypeName:      "a1",
+						Nesting:       schema.SchemaNestedBlockNestingModeList,
+						Block:         &schema.SchemaBlock{},
+						Optional:      ToPtr(true),
 						ConflictsWith: []string{"a1", "a2"},
+						Required:      ToPtr(false),
+						Computed:      ToPtr(false),
+						ForceNew:      ToPtr(false),
 					},
-					"a2": {
-						NestingMode:   schema.NestingList,
-						Block:         &schema.Block{},
-						Optional:      true,
+					{
+						TypeName:      "a2",
+						Nesting:       schema.SchemaNestedBlockNestingModeList,
+						Block:         &schema.SchemaBlock{},
+						Optional:      ToPtr(true),
 						ConflictsWith: []string{"a1", "a2"},
+						Required:      ToPtr(false),
+						Computed:      ToPtr(false),
+						ForceNew:      ToPtr(false),
 					},
-					"b1": {
-						NestingMode:  schema.NestingList,
-						Block:        &schema.Block{},
-						Optional:     true,
+					{
+						TypeName:     "b1",
+						Nesting:      schema.SchemaNestedBlockNestingModeList,
+						Block:        &schema.SchemaBlock{},
+						Optional:     ToPtr(true),
 						RequiredWith: []string{"b1", "b2"},
+						Required:     ToPtr(false),
+						Computed:     ToPtr(false),
+						ForceNew:     ToPtr(false),
 					},
-					"b2": {
-						NestingMode:  schema.NestingList,
-						Block:        &schema.Block{},
-						Optional:     true,
+					{
+						TypeName:     "b2",
+						Nesting:      schema.SchemaNestedBlockNestingModeList,
+						Block:        &schema.SchemaBlock{},
+						Optional:     ToPtr(true),
 						RequiredWith: []string{"b1", "b2"},
+						Required:     ToPtr(false),
+						Computed:     ToPtr(false),
+						ForceNew:     ToPtr(false),
 					},
-					"c1": {
-						NestingMode:  schema.NestingList,
-						Block:        &schema.Block{},
-						Optional:     true,
+					{
+						TypeName:     "c1",
+						Nesting:      schema.SchemaNestedBlockNestingModeList,
+						Block:        &schema.SchemaBlock{},
+						Optional:     ToPtr(true),
 						ExactlyOneOf: []string{"c1", "c2"},
+						Required:     ToPtr(false),
+						Computed:     ToPtr(false),
+						ForceNew:     ToPtr(false),
 					},
-					"c2": {
-						NestingMode:  schema.NestingList,
-						Block:        &schema.Block{},
-						Optional:     true,
+					{
+						TypeName:     "c2",
+						Nesting:      schema.SchemaNestedBlockNestingModeList,
+						Block:        &schema.SchemaBlock{},
+						Optional:     ToPtr(true),
 						ExactlyOneOf: []string{"c1", "c2"},
+						Required:     ToPtr(false),
+						Computed:     ToPtr(false),
+						ForceNew:     ToPtr(false),
 					},
-					"d1": {
-						NestingMode:  schema.NestingList,
-						Block:        &schema.Block{},
-						Optional:     true,
+					{
+						TypeName:     "d1",
+						Nesting:      schema.SchemaNestedBlockNestingModeList,
+						Block:        &schema.SchemaBlock{},
+						Optional:     ToPtr(true),
 						AtLeastOneOf: []string{"d1", "d2"},
+						Required:     ToPtr(false),
+						Computed:     ToPtr(false),
+						ForceNew:     ToPtr(false),
 					},
-					"d2": {
-						NestingMode:  schema.NestingList,
-						Block:        &schema.Block{},
-						Optional:     true,
+					{
+						TypeName:     "d2",
+						Nesting:      schema.SchemaNestedBlockNestingModeList,
+						Block:        &schema.SchemaBlock{},
+						Optional:     ToPtr(true),
 						AtLeastOneOf: []string{"d1", "d2"},
+						Required:     ToPtr(false),
+						Computed:     ToPtr(false),
+						ForceNew:     ToPtr(false),
 					},
 				},
 			}),
@@ -726,11 +844,11 @@ func TestFromSchemaMap(t *testing.T) {
 func TestFromResource(t *testing.T) {
 	tests := map[string]struct {
 		Resource *sdkschema.Resource
-		Want     *schema.Resource
+		Want     *schema.Schema
 	}{
 		"empty": {
 			&sdkschema.Resource{},
-			testResource(&schema.Resource{}),
+			testResource(&schema.Schema{}),
 		},
 		"primitives": {
 			&sdkschema.Resource{
@@ -755,29 +873,37 @@ func TestFromResource(t *testing.T) {
 					},
 				},
 			},
-			testResource(&schema.Resource{
-				SchemaVersion: 1,
-				Block: &schema.Block{
-					Attributes: map[string]*schema.Attribute{
-						"int": {
-							Type:     cty.Number,
+			testResource(&schema.Schema{
+				Version: 1,
+				Block: &schema.SchemaBlock{
+					Attributes: []*schema.SchemaAttribute{
+						{
+							Name:     "bool",
+							Type:     ToPtr(cty.Bool),
+							Computed: true,
+							ForceNew: ToPtr(false),
+						},
+						{
+							Name:     "float",
+							Type:     ToPtr(cty.Number),
+							Optional: true,
+							ForceNew: ToPtr(false),
+						},
+						{
+							Name:     "int",
+							Type:     ToPtr(cty.Number),
 							Required: true,
+							ForceNew: ToPtr(false),
 						},
-						"float": {
-							Type:     cty.Number,
-							Optional: true,
-						},
-						"bool": {
-							Type:     cty.Bool,
-							Computed: true,
-						},
-						"string": {
-							Type:     cty.String,
+						{
+							Name:     "string",
+							Type:     ToPtr(cty.String),
 							Optional: true,
 							Computed: true,
+							ForceNew: ToPtr(false),
 						},
 					},
-					NestedBlocks: map[string]*schema.NestedBlock{},
+					BlockTypes: []*schema.SchemaNestedBlock{},
 				},
 			}),
 		},
@@ -835,41 +961,47 @@ func TestFromProvider(t *testing.T) {
 			},
 			testProvider(&schema.ProviderSchema{
 				Provider: &schema.Schema{
-					Block: &schema.Block{
-						Attributes: map[string]*schema.Attribute{
-							"a": {
-								Type:     cty.Number,
+					Block: &schema.SchemaBlock{
+						Attributes: []*schema.SchemaAttribute{
+							{
+								Name:     "a",
+								Type:     ToPtr(cty.Number),
 								Required: true,
+								ForceNew: ToPtr(false),
 							},
 						},
-						NestedBlocks: map[string]*schema.NestedBlock{},
+						BlockTypes: []*schema.SchemaNestedBlock{},
 					},
 				},
-				ResourceSchemas: map[string]*schema.Resource{
-					"foo": testResource(&schema.Resource{
-						SchemaVersion: 1,
-						Block: &schema.Block{
-							Attributes: map[string]*schema.Attribute{
-								"b": {
-									Type:     cty.Number,
+				ResourceSchemas: map[string]*schema.Schema{
+					"foo": testResource(&schema.Schema{
+						Version: 1,
+						Block: &schema.SchemaBlock{
+							Attributes: []*schema.SchemaAttribute{
+								{
+									Name:     "b",
+									Type:     ToPtr(cty.Number),
 									Required: true,
+									ForceNew: ToPtr(false),
 								},
 							},
-							NestedBlocks: map[string]*schema.NestedBlock{},
+							BlockTypes: []*schema.SchemaNestedBlock{},
 						},
 					}),
 				},
-				DataSourceSchemas: map[string]*schema.Resource{
-					"bar": testResource(&schema.Resource{
-						SchemaVersion: 1,
-						Block: &schema.Block{
-							Attributes: map[string]*schema.Attribute{
-								"c": {
-									Type:     cty.Number,
+				DataSourceSchemas: map[string]*schema.Schema{
+					"bar": testResource(&schema.Schema{
+						Version: 1,
+						Block: &schema.SchemaBlock{
+							Attributes: []*schema.SchemaAttribute{
+								{
+									Name:     "c",
+									Type:     ToPtr(cty.Number),
 									Required: true,
+									ForceNew: ToPtr(false),
 								},
 							},
-							NestedBlocks: map[string]*schema.NestedBlock{},
+							BlockTypes: []*schema.SchemaNestedBlock{},
 						},
 					}),
 				},
@@ -885,4 +1017,8 @@ func TestFromProvider(t *testing.T) {
 			}
 		})
 	}
+}
+
+func ToPtr[T any](v T) *T {
+	return &v
 }

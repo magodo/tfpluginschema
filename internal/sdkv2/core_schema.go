@@ -4,25 +4,26 @@ package sdkv2
 
 import (
 	"fmt"
+	"sort"
 
 	sdkschema "github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/magodo/tfpluginschema/schema"
 	"github.com/zclconf/go-cty/cty"
 )
 
-func FromSchemaMap(m map[string]*sdkschema.Schema) *schema.Block {
+func FromSchemaMap(m map[string]*sdkschema.Schema) *schema.SchemaBlock {
 	if len(m) == 0 {
-		return &schema.Block{}
+		return &schema.SchemaBlock{}
 	}
 
-	ret := &schema.Block{
-		Attributes:   map[string]*schema.Attribute{},
-		NestedBlocks: map[string]*schema.NestedBlock{},
+	ret := &schema.SchemaBlock{
+		Attributes: []*schema.SchemaAttribute{},
+		BlockTypes: []*schema.SchemaNestedBlock{},
 	}
 
 	for name, ps := range m {
 		if ps.Elem == nil {
-			ret.Attributes[name] = fromProviderSchemaAttribute(ps)
+			ret.Attributes = append(ret.Attributes, fromProviderSchemaAttribute(name, ps))
 			continue
 		}
 		if ps.Type == sdkschema.TypeMap {
@@ -31,27 +32,27 @@ func FromSchemaMap(m map[string]*sdkschema.Schema) *schema.Block {
 				sch.Elem = &sdkschema.Schema{
 					Type: sdkschema.TypeString,
 				}
-				ret.Attributes[name] = fromProviderSchemaAttribute(&sch)
+				ret.Attributes = append(ret.Attributes, fromProviderSchemaAttribute(name, &sch))
 				continue
 			}
 		}
 		switch ps.ConfigMode {
 		case sdkschema.SchemaConfigModeAttr:
-			ret.Attributes[name] = fromProviderSchemaAttribute(ps)
+			ret.Attributes = append(ret.Attributes, fromProviderSchemaAttribute(name, ps))
 		case sdkschema.SchemaConfigModeBlock:
-			ret.NestedBlocks[name] = fromProviderSchemaBlock(ps)
+			ret.BlockTypes = append(ret.BlockTypes, fromProviderSchemaBlock(name, ps))
 		default: // SchemaConfigModeAuto, or any other invalid value
 			if ps.Computed && !ps.Optional {
 				// Computed-only schemas are always handled as attributes,
 				// because they never appear in configuration.
-				ret.Attributes[name] = fromProviderSchemaAttribute(ps)
+				ret.Attributes = append(ret.Attributes, fromProviderSchemaAttribute(name, ps))
 				continue
 			}
 			switch ps.Elem.(type) {
 			case *sdkschema.Schema, sdkschema.ValueType:
-				ret.Attributes[name] = fromProviderSchemaAttribute(ps)
+				ret.Attributes = append(ret.Attributes, fromProviderSchemaAttribute(name, ps))
 			case *sdkschema.Resource:
-				ret.NestedBlocks[name] = fromProviderSchemaBlock(ps)
+				ret.BlockTypes = append(ret.BlockTypes, fromProviderSchemaBlock(name, ps))
 			default:
 				// Should never happen for a valid schema
 				panic(fmt.Errorf("invalid Schema.Elem %#v; need *schema.Schema or *schema.Resource", ps.Elem))
@@ -59,10 +60,18 @@ func FromSchemaMap(m map[string]*sdkschema.Schema) *schema.Block {
 		}
 	}
 
+	sort.Slice(ret.Attributes, func(i, j int) bool {
+		return ret.Attributes[i].Name < ret.Attributes[j].Name
+	})
+
+	sort.Slice(ret.BlockTypes, func(i, j int) bool {
+		return ret.BlockTypes[i].TypeName < ret.BlockTypes[j].TypeName
+	})
+
 	return ret
 }
 
-func fromProviderSchemaAttribute(ps *sdkschema.Schema) *schema.Attribute {
+func fromProviderSchemaAttribute(name string, ps *sdkschema.Schema) *schema.SchemaAttribute {
 	reqd := ps.Required
 	opt := ps.Optional
 	if reqd && ps.DefaultFunc != nil {
@@ -72,13 +81,15 @@ func fromProviderSchemaAttribute(ps *sdkschema.Schema) *schema.Attribute {
 			opt = true
 		}
 	}
+	typ := fromProviderSchemaType(ps)
 
-	return &schema.Attribute{
-		Type:     fromProviderSchemaType(ps),
+	return &schema.SchemaAttribute{
+		Name:     name,
+		Type:     &typ,
 		Optional: opt,
 		Required: reqd,
 		Computed: ps.Computed,
-		ForceNew: ps.ForceNew,
+		ForceNew: &ps.ForceNew,
 
 		Default:   ps.Default,
 		Sensitive: ps.Sensitive,
@@ -90,12 +101,13 @@ func fromProviderSchemaAttribute(ps *sdkschema.Schema) *schema.Attribute {
 	}
 }
 
-func fromProviderSchemaBlock(ps *sdkschema.Schema) *schema.NestedBlock {
-	ret := &schema.NestedBlock{
-		Required: ps.Required,
-		Optional: ps.Optional,
-		Computed: ps.Computed,
-		ForceNew: ps.ForceNew,
+func fromProviderSchemaBlock(name string, ps *sdkschema.Schema) *schema.SchemaNestedBlock {
+	ret := &schema.SchemaNestedBlock{
+		TypeName: name,
+		Required: &ps.Required,
+		Optional: &ps.Optional,
+		Computed: &ps.Computed,
+		ForceNew: &ps.ForceNew,
 
 		ConflictsWith: ps.ConflictsWith,
 		ExactlyOneOf:  ps.ExactlyOneOf,
@@ -109,11 +121,11 @@ func fromProviderSchemaBlock(ps *sdkschema.Schema) *schema.NestedBlock {
 
 	switch ps.Type {
 	case sdkschema.TypeList:
-		ret.NestingMode = schema.NestingList
+		ret.Nesting = schema.SchemaNestedBlockNestingModeList
 	case sdkschema.TypeSet:
-		ret.NestingMode = schema.NestingSet
+		ret.Nesting = schema.SchemaNestedBlockNestingModeSet
 	case sdkschema.TypeMap:
-		ret.NestingMode = schema.NestingMap
+		ret.Nesting = schema.SchemaNestedBlockNestingModeMap
 	default:
 		// Should never happen for a valid schema
 		panic(fmt.Errorf("invalid s.Type %s for s.Elem being resource", ps.Type))
@@ -183,10 +195,10 @@ func fromProviderSchemaType(ps *sdkschema.Schema) cty.Type {
 	}
 }
 
-func FromResource(res *sdkschema.Resource) *schema.Resource {
-	ret := &schema.Resource{
-		SchemaVersion: res.SchemaVersion,
-		Block:         FromSchemaMap(res.Schema),
+func FromResource(res *sdkschema.Resource) *schema.Schema {
+	ret := &schema.Schema{
+		Version: int64(res.SchemaVersion),
+		Block:   FromSchemaMap(res.Schema),
 	}
 	return ret
 }
@@ -196,8 +208,8 @@ func FromProvider(p *sdkschema.Provider) *schema.ProviderSchema {
 		Provider: &schema.Schema{
 			Block: FromSchemaMap(p.Schema),
 		},
-		ResourceSchemas:   map[string]*schema.Resource{},
-		DataSourceSchemas: map[string]*schema.Resource{},
+		ResourceSchemas:   map[string]*schema.Schema{},
+		DataSourceSchemas: map[string]*schema.Schema{},
 	}
 
 	for name, res := range p.ResourcesMap {
