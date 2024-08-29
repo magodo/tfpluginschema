@@ -21,6 +21,22 @@ type SchemaBlock struct {
 	BlockTypes []*SchemaNestedBlock `json:"block_types,omitempty"`
 }
 
+func (sb SchemaBlock) AttributesMap() map[string]*SchemaAttribute {
+	m := map[string]*SchemaAttribute{}
+	for _, attr := range sb.Attributes {
+		m[attr.Name] = attr
+	}
+	return m
+}
+
+func (sb SchemaBlock) BlocksMap() map[string]*SchemaNestedBlock {
+	m := map[string]*SchemaNestedBlock{}
+	for _, blk := range sb.BlockTypes {
+		m[blk.TypeName] = blk
+	}
+	return m
+}
+
 type SchemaNestedBlockNestingMode int
 
 const (
