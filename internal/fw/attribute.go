@@ -107,97 +107,161 @@ func ResourceSchemaAttribute(ctx context.Context, name string, path *tftypes.Att
 		if a.Default != nil {
 			var resp defaults.BoolResponse
 			a.Default.DefaultBool(ctx, defaults.BoolRequest{}, &resp)
-			schemaAttribute.Default = resp.PlanValue
+			v, err := AttrValueToGo(resp.PlanValue)
+			if err != nil {
+				return nil, path.NewError(err)
+			}
+			schemaAttribute.Default = v
 		}
 	case resourceschema.Float32Attribute:
 		if a.Default != nil {
 			var resp defaults.Float32Response
 			a.Default.DefaultFloat32(ctx, defaults.Float32Request{}, &resp)
-			schemaAttribute.Default = resp.PlanValue
+			v, err := AttrValueToGo(resp.PlanValue)
+			if err != nil {
+				return nil, path.NewError(err)
+			}
+			schemaAttribute.Default = v
 		}
 	case resourceschema.Float64Attribute:
 		if a.Default != nil {
 			var resp defaults.Float64Response
 			a.Default.DefaultFloat64(ctx, defaults.Float64Request{}, &resp)
-			schemaAttribute.Default = resp.PlanValue
+			v, err := AttrValueToGo(resp.PlanValue)
+			if err != nil {
+				return nil, path.NewError(err)
+			}
+			schemaAttribute.Default = v
 		}
 	case resourceschema.Int32Attribute:
 		if a.Default != nil {
 			var resp defaults.Int32Response
 			a.Default.DefaultInt32(ctx, defaults.Int32Request{}, &resp)
-			schemaAttribute.Default = resp.PlanValue
+			v, err := AttrValueToGo(resp.PlanValue)
+			if err != nil {
+				return nil, path.NewError(err)
+			}
+			schemaAttribute.Default = v
 		}
 	case resourceschema.Int64Attribute:
 		if a.Default != nil {
 			var resp defaults.Int64Response
 			a.Default.DefaultInt64(ctx, defaults.Int64Request{}, &resp)
-			schemaAttribute.Default = resp.PlanValue
+			v, err := AttrValueToGo(resp.PlanValue)
+			if err != nil {
+				return nil, path.NewError(err)
+			}
+			schemaAttribute.Default = v
 		}
 	case resourceschema.NumberAttribute:
 		if a.Default != nil {
 			var resp defaults.NumberResponse
 			a.Default.DefaultNumber(ctx, defaults.NumberRequest{}, &resp)
-			schemaAttribute.Default = resp.PlanValue
+			v, err := AttrValueToGo(resp.PlanValue)
+			if err != nil {
+				return nil, path.NewError(err)
+			}
+			schemaAttribute.Default = v
 		}
 	case resourceschema.StringAttribute:
 		if a.Default != nil {
 			var resp defaults.StringResponse
 			a.Default.DefaultString(ctx, defaults.StringRequest{}, &resp)
-			schemaAttribute.Default = resp.PlanValue
+			v, err := AttrValueToGo(resp.PlanValue)
+			if err != nil {
+				return nil, path.NewError(err)
+			}
+			schemaAttribute.Default = v
 		}
 	case resourceschema.ListAttribute:
 		if a.Default != nil {
 			var resp defaults.ListResponse
 			a.Default.DefaultList(ctx, defaults.ListRequest{}, &resp)
-			schemaAttribute.Default = resp.PlanValue
+			v, err := AttrValueToGo(resp.PlanValue)
+			if err != nil {
+				return nil, path.NewError(err)
+			}
+			schemaAttribute.Default = v
 		}
 	case resourceschema.MapAttribute:
 		if a.Default != nil {
 			var resp defaults.MapResponse
 			a.Default.DefaultMap(ctx, defaults.MapRequest{}, &resp)
-			schemaAttribute.Default = resp.PlanValue
+			v, err := AttrValueToGo(resp.PlanValue)
+			if err != nil {
+				return nil, path.NewError(err)
+			}
+			schemaAttribute.Default = v
 		}
 	case resourceschema.SetAttribute:
 		if a.Default != nil {
 			var resp defaults.SetResponse
 			a.Default.DefaultSet(ctx, defaults.SetRequest{}, &resp)
-			schemaAttribute.Default = resp.PlanValue
+			v, err := AttrValueToGo(resp.PlanValue)
+			if err != nil {
+				return nil, path.NewError(err)
+			}
+			schemaAttribute.Default = v
 		}
 	case resourceschema.SingleNestedAttribute:
 		if a.Default != nil {
 			var resp defaults.ObjectResponse
 			a.Default.DefaultObject(ctx, defaults.ObjectRequest{}, &resp)
-			schemaAttribute.Default = resp.PlanValue
+			v, err := AttrValueToGo(resp.PlanValue)
+			if err != nil {
+				return nil, path.NewError(err)
+			}
+			schemaAttribute.Default = v
 		}
 	case resourceschema.ListNestedAttribute:
 		if a.Default != nil {
 			var resp defaults.ListResponse
 			a.Default.DefaultList(ctx, defaults.ListRequest{}, &resp)
-			schemaAttribute.Default = resp.PlanValue
+			v, err := AttrValueToGo(resp.PlanValue)
+			if err != nil {
+				return nil, path.NewError(err)
+			}
+			schemaAttribute.Default = v
 		}
 	case resourceschema.MapNestedAttribute:
 		if a.Default != nil {
 			var resp defaults.MapResponse
 			a.Default.DefaultMap(ctx, defaults.MapRequest{}, &resp)
-			schemaAttribute.Default = resp.PlanValue
+			v, err := AttrValueToGo(resp.PlanValue)
+			if err != nil {
+				return nil, path.NewError(err)
+			}
+			schemaAttribute.Default = v
 		}
 	case resourceschema.SetNestedAttribute:
 		if a.Default != nil {
 			var resp defaults.SetResponse
 			a.Default.DefaultSet(ctx, defaults.SetRequest{}, &resp)
-			schemaAttribute.Default = resp.PlanValue
+			v, err := AttrValueToGo(resp.PlanValue)
+			if err != nil {
+				return nil, path.NewError(err)
+			}
+			schemaAttribute.Default = v
 		}
 	case resourceschema.ObjectAttribute:
 		if a.Default != nil {
 			var resp defaults.ObjectResponse
 			a.Default.DefaultObject(ctx, defaults.ObjectRequest{}, &resp)
-			schemaAttribute.Default = resp.PlanValue
+			v, err := AttrValueToGo(resp.PlanValue)
+			if err != nil {
+				return nil, path.NewError(err)
+			}
+			schemaAttribute.Default = v
 		}
 	case resourceschema.DynamicAttribute:
 		if a.Default != nil {
 			var resp defaults.DynamicResponse
 			a.Default.DefaultDynamic(ctx, defaults.DynamicRequest{}, &resp)
-			schemaAttribute.Default = resp.PlanValue
+			v, err := AttrValueToGo(resp.PlanValue)
+			if err != nil {
+				return nil, path.NewError(err)
+			}
+			schemaAttribute.Default = v
 		}
 	default:
 		return nil, path.NewErrorf("unhandled type for default value: %T", a)

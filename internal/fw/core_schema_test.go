@@ -491,13 +491,13 @@ func TestFromProvider(t *testing.T) {
 							Optional:  true,
 							Sensitive: true,
 							Computed:  true,
-							Default:   basetypes.NewBoolValue(true),
+							Default:   true,
 						},
 						{
 							Name:     "list",
 							Required: true,
 							Type:     ToPtr(cty.List(cty.String)),
-							Default:  basetypes.NewListValueMust(basetypes.StringType{}, []attr.Value{basetypes.NewStringValue("a")}),
+							Default:  []interface{}{"a"},
 						},
 						{
 							Name:     "list_nested",
@@ -512,13 +512,13 @@ func TestFromProvider(t *testing.T) {
 								},
 								Nesting: schema.SchemaObjectNestingModeList,
 							},
-							Default: basetypes.NewListValueMust(basetypes.ObjectType{AttrTypes: map[string]attr.Type{"a": basetypes.StringType{}}}, []attr.Value{basetypes.NewObjectValueMust(map[string]attr.Type{"a": basetypes.StringType{}}, map[string]attr.Value{"a": basetypes.NewStringValue("a")})}),
+							Default: []interface{}{map[string]interface{}{"a": "a"}},
 						},
 						{
 							Name:     "map",
 							Required: true,
 							Type:     ToPtr(cty.Map(cty.String)),
-							Default:  basetypes.NewMapValueMust(basetypes.StringType{}, map[string]attr.Value{"a": basetypes.NewStringValue("a")}),
+							Default:  map[string]interface{}{"a": "a"},
 						},
 						{
 							Name:     "number",
@@ -529,13 +529,13 @@ func TestFromProvider(t *testing.T) {
 							Name:     "object",
 							Required: true,
 							Type:     ToPtr(cty.Object(map[string]cty.Type{"string": cty.String})),
-							Default:  basetypes.NewObjectValueMust(map[string]attr.Type{"a": basetypes.StringType{}}, map[string]attr.Value{"a": basetypes.NewStringValue("a")}),
+							Default:  map[string]interface{}{"a": "a"},
 						},
 						{
 							Name:     "set",
 							Required: true,
 							Type:     ToPtr(cty.Set(cty.String)),
-							Default:  basetypes.NewSetValueMust(basetypes.StringType{}, []attr.Value{basetypes.NewStringValue("a")}),
+							Default:  []interface{}{"a"},
 						},
 						{
 							Name:     "single_nested",
@@ -550,13 +550,13 @@ func TestFromProvider(t *testing.T) {
 								},
 								Nesting: schema.SchemaObjectNestingModeSingle,
 							},
-							Default: basetypes.NewObjectValueMust(map[string]attr.Type{"a": basetypes.StringType{}}, map[string]attr.Value{"a": basetypes.NewStringValue("a")}),
+							Default: map[string]interface{}{"a": "a"},
 						},
 						{
 							Name:     "string",
 							Required: true,
 							Type:     &cty.String,
-							Default:  basetypes.NewStringValue("foo"),
+							Default:  "foo",
 						},
 					},
 					BlockTypes: []*schema.SchemaNestedBlock{
