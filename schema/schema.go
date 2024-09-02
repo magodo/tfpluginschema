@@ -17,21 +17,25 @@ type Schema struct {
 }
 
 type SchemaBlock struct {
-	Attributes []*SchemaAttribute   `json:"attributes,omitempty"`
-	BlockTypes []*SchemaNestedBlock `json:"block_types,omitempty"`
+	Attributes SchemaAttributes   `json:"attributes,omitempty"`
+	BlockTypes SchemaNestedBlocks `json:"block_types,omitempty"`
 }
 
-func (sb SchemaBlock) AttributesMap() map[string]*SchemaAttribute {
+type SchemaAttributes []*SchemaAttribute
+
+type SchemaNestedBlocks []*SchemaNestedBlock
+
+func (attrs SchemaAttributes) Map() map[string]*SchemaAttribute {
 	m := map[string]*SchemaAttribute{}
-	for _, attr := range sb.Attributes {
+	for _, attr := range attrs {
 		m[attr.Name] = attr
 	}
 	return m
 }
 
-func (sb SchemaBlock) BlocksMap() map[string]*SchemaNestedBlock {
+func (blocks SchemaNestedBlocks) Map() map[string]*SchemaNestedBlock {
 	m := map[string]*SchemaNestedBlock{}
-	for _, blk := range sb.BlockTypes {
+	for _, blk := range blocks {
 		m[blk.TypeName] = blk
 	}
 	return m
@@ -69,7 +73,7 @@ type SchemaNestedBlock struct {
 }
 
 type SchemaObject struct {
-	Attributes []*SchemaAttribute
+	Attributes SchemaAttributes
 	Nesting    SchemaObjectNestingMode
 }
 
